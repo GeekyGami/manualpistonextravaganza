@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
@@ -6,81 +6,96 @@ using UnityEngine;
 using UnityEngine.Video;
 using BepInEx.Configuration;
 
+
 [BepInPlugin(pluginGuid, pluginName, pluginVersion)]
 public class ManualPistonExtravaganza : BaseUnityPlugin
 {
-    public const string pluginGuid = "ManualPistonExtravaganza";
-    public const string pluginName = "Manual Piston Extravaganza";
-    public const string pluginVersion = "1.0.0.0";
-    //public ConfigEntry<KeyboardShortcut> Hotkey_Dump { get; private set; }
-    private float speed;
-    private Vector3 startPosition;
-    public bool isOn = false;
+        public const string pluginGuid = "ManualPistonExtravaganza";
+        public const string pluginName = "Manual Piston Extravaganza";
+        public const string pluginVersion = "1.1.0.0";
+        //public ConfigEntry<KeyboardShortcut> Hotkey_Dump { get; private set; }
+        private float speed;
+        private Vector3 startPosition;
+        public bool isOn = false;
 
-    private List<Animator> animators = new List<Animator>();
-    private List<VideoPlayer> videoPlayers = new List<VideoPlayer>();
-    private bool donewithspeed = false;
+        private List<Animator> animators = new List<Animator>();
+        private List<VideoPlayer> videoPlayers = new List<VideoPlayer>();
 
-   private void SetSpeeds(float theSpeed)
-    {
-        for (var i = 0; i < animators.Count; i++)
-            animators[i].speed = theSpeed;
-        for (var i = 0; i < videoPlayers.Count; i++)
-            videoPlayers[i].playbackSpeed = theSpeed;
-    }
-
-
-    private void GetAnimVids()
-    { if (this.isOn)
+        private void SetSpeeds(float theSpeed)
         {
-            animators.RemoveAll(animators => animators == null);
-            videoPlayers.RemoveAll(videoPlayers => videoPlayers == null);
-            if (animators != null) animators.AddRange(FindObjectsOfType<Animator>());
-            if (videoPlayers != null) videoPlayers.AddRange(FindObjectsOfType<VideoPlayer>());
-        }
-    }
-        private void Start()
-    {
-        InvokeRepeating("GetAnimVids", 1f, 0.1f);
-        this.Update(); 
-    }
-    private void Update()
-    {
-        var x = Input.mousePosition.x - startPosition.x;
-        var y = Input.mousePosition.y - startPosition.y;
-        if (Mathf.Abs(x) >= 0.5f || Mathf.Abs(y) >= 0.5f)
-        {
-            speed = (float)Math.Sqrt((double)(Math.Abs(y) * Math.Abs(y) + Math.Abs(x) * Math.Abs(x))) * 0.1f;
-            if (speed > 11f)
+            var hasAnyNulls = false;
+            for (var i = 0; i < animators.Count; i++)
             {
-                speed = 11f;
+                var animator = animators[i];
+                if (animator == null)
+                {
+                    hasAnyNulls = true;
+                    continue;
+                }
+                animator.speed = theSpeed;
+            }
+            if (hasAnyNulls)
+            {
+                animators.RemoveAll(animators => animators == null);
+                hasAnyNulls = false;
+            }
+
+            for (var i = 0; i < videoPlayers.Count; i++)
+            {
+                var videoPlayer = videoPlayers[i];
+                if (videoPlayer == null)
+                {
+                    hasAnyNulls = true;
+                    continue;
+                }
+                videoPlayer.playbackSpeed = theSpeed;
+            }
+            if (hasAnyNulls)
+            {
+                videoPlayers.RemoveAll(videoPlayers => videoPlayers == null);
             }
         }
-        else
-        {
-            speed = 0f;
-        }
-        startPosition = Input.mousePosition;
-         if (Input.GetKeyDown(KeyCode.KeypadDivide))
-        {
-           isOn = !isOn;
-        }
+
+    private void AnimVidAdder()
+    {
         if (isOn)
         {
-            this.SetSpeeds(this.speed);
-        }
-        else
-        { this.SetSpeeds(1f);
-               this.donewithspeed = true;
-                  if (this.donewithspeed == true)
-                {
-                    this.donewithspeed = false;
-                        videoPlayers.Clear();
-                        animators.Clear();
-                }
+            animators.AddRange(FindObjectsOfType<Animator>());
+            videoPlayers.AddRange(FindObjectsOfType<VideoPlayer>());
         }
     }
-}
+    private void Start()
+    { InvokeRepeating("AnimVidAdder", 1f, 0.1f); }
+
+        private void Update()
+        {
+            var delta = Input.mousePosition - startPosition;
+            var mag = delta.sqrMagnitude;
+            if (mag > 0.01f)
+            {
+            speed = Mathf.Clamp((float)Math.Sqrt(mag) * 0.1f, 0, 11f);
+            }
+            else
+            {
+                speed = 0f;
+            }
+            startPosition = Input.mousePosition;
+            if (Input.GetKeyDown(KeyCode.KeypadDivide))
+            {
+                isOn = !isOn;
+            }
+            if (isOn)
+            {
+                SetSpeeds(speed);
+            }
+            else
+            {       
+            SetSpeeds(1f);
+            videoPlayers.Clear();
+            animators.Clear();
+        }
+        }
+    }
 
 
 
