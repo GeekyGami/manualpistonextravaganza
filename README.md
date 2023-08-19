@@ -19,3 +19,8 @@ Build.
 
 There may be other ways, but I am not exactly a developer.
 Don't @ me.
+
+
+Big thanks to Lost Robot from the LMMS server and Essu from the IllusionSoft Discord for helping with the code!
+While I'm certain it's not done to the standard of either of them for many reasons, it is much, MUCH better than it would have been without them.
+Thank you!
